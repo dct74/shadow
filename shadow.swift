@@ -105,7 +105,9 @@ func addWindowLikeShadow(to filePath: String) throws {
     
     let originalFilename = resolvedFileURL.deletingPathExtension().lastPathComponent
     let newFilename = "\(originalFilename)_shadow.png"
-    let outputURL = resolvedFileURL.deletingLastPathComponent().appendingPathComponent(newFilename)
+    let shadowDir = resolvedFileURL.deletingLastPathComponent().appendingPathComponent("shadow")
+    try FileManager.default.createDirectory(at: shadowDir, withIntermediateDirectories: true, attributes: nil)
+    let outputURL = shadowDir.appendingPathComponent(newFilename)
     
     guard let destination = CGImageDestinationCreateWithURL(outputURL as CFURL, UTType.png.identifier as CFString, 1, nil) else {
         throw NSError(domain: "WriteError", code: 7, userInfo: [NSLocalizedDescriptionKey: "Failed to create image destination."])
