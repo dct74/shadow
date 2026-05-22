@@ -112,12 +112,12 @@ func addWindowLikeShadow(to filePath: String, cornerRadius: CGFloat = 96) throws
     }
     // 3. Draw two-layer shadow on canvas
     let padding: CGFloat = 150.0
-    let ambientShadowOffset = CGSize(width: 0, height: -8)
-    let ambientShadowBlur: CGFloat = 85.0
-    let ambientShadowColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.13)
-    let contactShadowOffset = CGSize(width: 0, height: -18)
-    let contactShadowBlur: CGFloat = 65.0
-    let contactShadowColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+    let ambientShadowOffset = CGSize(width: 0, height: -16)
+    let ambientShadowBlur: CGFloat = 80.0
+    let ambientShadowColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.1)
+    let contactShadowOffset = CGSize(width: 0, height: -24)
+    let contactShadowBlur: CGFloat = 55.0
+    let contactShadowColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.3)
     let newWidth = origWidth + padding * 2
     let newHeight = origHeight + padding * 2
     guard let context = CGContext(data: nil, width: Int(newWidth), height: Int(newHeight), bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) else {
