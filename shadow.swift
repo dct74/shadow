@@ -6,22 +6,6 @@ import UniformTypeIdentifiers
 private let colorReset = "\u{001B}[0m"
 private let colorGreen = "\u{001B}[32m"
 private let colorRed = "\u{001B}[31m"
-// MARK: - Spinner Animation
-private func startSpinner(message: String) -> Task<Void, Never> {
-    Task {
-        let frames = ["-", "\\", "|", "/"]
-        var idx = 0
-        while !Task.isCancelled {
-            fputs("\r\(frames[idx]) \(message)", stderr)
-            fflush(stderr)
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            idx = (idx + 1) % frames.count
-        }
-        let clearLine = String(repeating: " ", count: message.count + 10)
-        fputs("\r\(clearLine)\r", stderr)
-        fflush(stderr)
-    }
-}
 // MARK: - macOS Squircle Path
 private func createRoundedRectPath(for rect: CGRect, radius: CGFloat) -> CGPath {
     let r = min(radius, min(rect.width, rect.height) / 2)
@@ -80,6 +64,7 @@ private func makeWhiteAlphaMask(from image: CGImage) -> CGImage? {
 }
 // MARK: - Main Processor: Squircle Crop + Two-Layer Shadow
 func addWindowLikeShadow(to filePath: String, cornerRadius: CGFloat = 96) throws {
+    try autoreleasepool {
     let fileURL = URL(fileURLWithPath: filePath)
     let resolvedFileURL = fileURL.resolvingSymlinksInPath()
     var imageProperties: [CFString: Any] = [:]
@@ -151,6 +136,7 @@ func addWindowLikeShadow(to filePath: String, cornerRadius: CGFloat = 96) throws
     if !CGImageDestinationFinalize(destination) {
         throw NSError(domain: "WriteError", code: 8, userInfo: [NSLocalizedDescriptionKey: "Failed to finalize image write."])
     }
+    }
 }
 // MARK: - Image File Discovery
 func getImagePaths(in directoryPath: String) -> [String] {
@@ -181,24 +167,36 @@ func processPaths(_ dropPaths: [String]) async {
         }
     }
     if allFilePaths.isEmpty { return }
-    fputs("Start processing \(allFilePaths.count) files\n", stderr)
-    let spinner = startSpinner(message: "Processing \(allFilePaths.count) files...")
-    var successCount = 0
-    var failCount = 0
-    var errors: [String] = []
-    for path in allFilePaths {
-        do {
-            try addWindowLikeShadow(to: path)
-            successCount += 1
-        } catch {
-            errors.append("❌ Failed [\(path)]: \(error.localizedDescription)")
-            failCount += 1
+    let total = allFilePaths.count
+    fputs("Start processing \(total) files\n", stderr)
+    let results = await withTaskGroup(of: (String, Bool, String).self) { group in
+        for (index, path) in allFilePaths.enumerated() {
+            group.addTask {
+                let name = URL(fileURLWithPath: path).lastPathComponent
+                fputs("  [\(index + 1)/\(total)] \(name)\n", stderr)
+                do {
+                    try addWindowLikeShadow(to: path)
+                    return (path, true, "")
+                } catch {
+                    return (path, false, error.localizedDescription)
+                }
+            }
         }
+        var successCount = 0
+        var failCount = 0
+        var errors: [String] = []
+        for await (path, ok, errorMsg) in group {
+            if ok {
+                successCount += 1
+            } else {
+                errors.append("❌ Failed [\(path)]: \(errorMsg)")
+                failCount += 1
+            }
+        }
+        return (successCount, failCount, errors)
     }
-    spinner.cancel()
-    await spinner.value
-    for error in errors { fputs("\(error)\n", stderr) }
-    let result = "Done: \(colorGreen)successed \(successCount)\(colorReset), \(colorRed)failed \(failCount)\(colorReset)\n"
+    for error in results.2 { fputs("\(error)\n", stderr) }
+    let result = "Done: \(colorGreen)succeeded \(results.0)\(colorReset), \(colorRed)failed \(results.1)\(colorReset)\n"
     fputs(result, stderr)
 }
 // MARK: - Entry Point
