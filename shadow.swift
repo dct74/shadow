@@ -103,12 +103,12 @@ func addWindowLikeShadow(to filePath: String, cornerRadius: CGFloat = 96) throws
     let contactShadowOffset = CGSize(width: 0, height: -24)
     let contactShadowBlur: CGFloat = 55.0
     let contactShadowColor = CGColor(red: 0, green: 0, blue: 0, alpha: 0.3)
-    let newWidth = origWidth + padding * 2
-    let newHeight = origHeight + padding * 2
+        let newWidth = origWidth + padding * 1.5
+        let newHeight = origHeight + padding * 1.5
     guard let context = CGContext(data: nil, width: Int(newWidth), height: Int(newHeight), bitsPerComponent: 8, bytesPerRow: 0, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) else {
         throw NSError(domain: "ContextError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to create graphics context."])
     }
-    let drawRect = CGRect(x: padding, y: padding, width: origWidth, height: origHeight)
+    let drawRect = CGRect(x: padding * 0.75, y: padding * 0.75, width: origWidth, height: origHeight)
     // Ambient shadow (wide, soft)
     context.saveGState()
     context.setShadow(offset: ambientShadowOffset, blur: ambientShadowBlur, color: ambientShadowColor)
